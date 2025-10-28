@@ -37,7 +37,7 @@ securely **record visitor details and track donations** in one place.
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/your-username/goodlife-foundation.git
+git clone https://github.com/ShreyaVijaykumar/goodlife-foundation.git
 cd goodlife-foundation
 ```
 
@@ -54,18 +54,4 @@ python app.py
 - The SQLite database goodlife_schema.db is created automatically.
 
 ---
-## 📂 Project Structure
-## Project Structure
-```text
-goodlife-foundation/
-│
-├── app.py                  # Flask application & database initialization
-├── goodlife_schema.db      # Auto-created SQLite database
-├── static/
-│   └── styles.css          # Custom CSS
-└── templates/
-    ├── base.html           # Shared layout with navigation
-    ├── visitor_form.html   # Visitor entry form
-    ├── donation_form.html  # Donation entry form with dynamic payment detail field
-    └── success.html        # Confirmation page
-```
+
