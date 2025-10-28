@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Expense Entry Form</h2>
+
+<div class="finance-card" style="margin-bottom: 1.5rem; text-align: center;">
+    <h3>Available Balance</h3>
+    <p class="{% if net_balance <= 0 %}negative{% else %}positive{% endif %}" style="font-size: 1.8rem; font-weight: bold;">
+        ₹{{ "%.2f"|format(net_balance) }}
+    </p>
+</div>
+
+<form method="POST">
+    <fieldset {% if net_balance <= 0 %}disabled{% endif %}>
+        
+        <div class="form-grid-2">
+            <div>
+                <label>Item / Service:</label>
+                <input type="text" name="item_name" required>
+            </div>
+            
+            <div>
+                <label>Amount:</label>
+                <input type="number" name="amount" step="0.01" max="{{ net_balance }}" min="0.01" required>
+            </div>
+
+            <div>
+                <label>Category:</label>
+                <select name="category" required>
+                    <option value="">Select Category</option>
+                    <option value="Food">Food & Groceries</option>
+                    <option value="Utilities">Utilities (Electricity, Water)</option>
+                    <option value="Supplies">Office/NGO Supplies</option>
+                    <option value="Medical">Medical</option>
+                    <option value="School">School/Education</option>
+                    <option value="Rent">Rent</option>
+                    <option value="Staff">Staff/Volunteer Stipend</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <div>
+                <label>Link to Person (Optional):</label>
+                <select name="person_id">
+                    <option value="">-- None --</option>
+                    {% for person in people %}
+                        <option value="{{ person.id }}">
+                            {{ person.name }} ({{ person.category }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="span-2">
+                <label>Details:</label>
+                <textarea name="details"></textarea>
+            </div>
+
+            <div class="span-2">
+                <button type="submit">Submit Expense</button>
+            </div>
+        </div>
+        </fieldset>
+
+    {% if net_balance <= 0 %}
+        <div class="message danger" style="text-align: center; margin-top: 1rem;">
+            You have no available funds to add expenses.
+        </div>
+    {% endif %}
+</form>
+{% endblock %}

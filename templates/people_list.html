@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2>People Directory</h2>
+    <a href="/add_person" class="button-link" 
+       style="background-color: #678d58; color: white; padding: 0.7rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 600;">
+       + Add New Person
+    </a>
+</div>
+
+<style>
+    .people-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .people-table th, .people-table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .people-table th {
+        background-color: #f9f9f9;
+        font-weight: 700;
+        color: #555;
+    }
+    .people-table tr:hover {
+        background-color: #f4f7f6;
+    }
+    .people-table td a {
+        color: #1976d2;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .people-table td a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<table class="people-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Date of Birth</th>
+            <th>Join Date</th>
+            <th>View</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for person in people %}
+            <tr>
+                <td>{{ person.name }}</td>
+                <td>{{ person.category }}</td>
+                <td>{{ person.dob or 'N/A' }}</td>
+                <td>{{ person.join_date or 'N/A' }}</td>
+                <td><a href="/person/{{ person.id }}">View Profile</a></td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 2rem;">No people found.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

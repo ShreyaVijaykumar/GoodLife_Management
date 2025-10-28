@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="finance-card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+            <h2>{{ person.name }}</h2>
+            <p style="font-size: 1.1rem; color: #555; margin-top: -1rem;">
+                <strong>Category:</strong> {{ person.category }}
+            </p>
+        </div>
+        <div style="text-align: right;">
+            <strong>Total Spent:</strong>
+            <p style="font-size: 1.8rem; font-weight: bold;" class="negative">
+                ₹{{ "%.2f"|format(total_spent) }}
+            </p>
+        </div>
+    </div>
+    
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 1.5rem 0;">
+    
+    <p><strong>Date of Birth:</strong> {{ person.dob or 'N/A' }}</p>
+    <p><strong>Join Date:</strong> {{ person.join_date or 'N/A' }}</p>
+    <p><strong>Notes:</strong></p>
+    <pre style="background-color: #f4f7f6; padding: 1rem; border-radius: 8px; font-family: 'Nunito', sans-serif; white-space: pre-wrap;">{{ person.notes or 'No notes.' }}</pre>
+</div>
+
+<h3>Linked Expenses</h3>
+<style>
+    .expense-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .expense-table th, .expense-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #eee; }
+    .expense-table th { background-color: #f9f9f9; font-weight: 700; color: #555; }
+    .expense-table td:last-child { font-weight: 700; color: #c62828; }
+</style>
+
+<table class="expense-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Item / Service</th>
+            <th>Category</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for expense in expenses %}
+            <tr>
+                <td>{{ expense.expense_date }}</td>
+                <td>{{ expense.item_name }}</td>
+                <td>{{ expense.category }}</td>
+                <td>₹{{ "%.2f"|format(expense.amount) }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 2rem;">No expenses linked to this person.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Finance Dashboard</h2>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="finance-grid">
+    <div class="finance-card">
+        <h3>Total Donations</h3>
+        <p id="total-donations">₹0.00</p>
+    </div>
+    <div class="finance-card">
+        <h3>Total Expenses</h3>
+        <p id="total-expenses">₹0.00</p>
+    </div>
+    <div class="finance-card">
+        <h3>Net Balance</h3>
+        <p id="net-balance" class="positive">₹0.00</p> 
+    </div>
+</div>
+
+<h3>Expense Breakdown</h3>
+<div style="max-width: 600px; margin: auto; background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    <canvas id="expensePieChart"></canvas>
+</div>
+
+<script>
+    let myPieChart; // Make chart variable global
+    
+    // Function to fetch data and update the dashboard
+    async function updateDashboard() {
+        try {
+            const response = await fetch('/get_financial_data');
+            const data = await response.json();
+
+            // Format numbers as Indian Rupees
+            const inrFormatter = new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR'
+            });
+
+            // Update the big number cards
+            document.getElementById('total-donations').textContent = inrFormatter.format(data.total_donations);
+            document.getElementById('total-expenses').textContent = inrFormatter.format(data.total_expenses);
+            
+            // Apply class based on balance
+            const netBalanceEl = document.getElementById('net-balance');
+            netBalanceEl.textContent = inrFormatter.format(data.net_balance);
+            if (data.net_balance < 0) {
+                netBalanceEl.className = 'negative';
+            } else {
+                netBalanceEl.className = 'positive';
+            }
+
+            // Prepare data for the chart
+            const labels = Object.keys(data.expense_categories);
+            const chartData = Object.values(data.expense_categories);
+            
+            const colors = [
+                '#d32f2f', '#c2185b', '#7b1fa2', '#512da8', '#303f9f',
+                '#1976d2', '#0288d1', '#0097a7', '#00796b', '#388e3c',
+                '#689f38', '#afb42b', '#fbc02d', '#ffa000', '#f57c00'
+            ];
+
+            const ctx = document.getElementById('expensePieChart').getContext('2d');
+            
+            // Destroy the old chart if it exists (to prevent flickering on update)
+            if (myPieChart) {
+                myPieChart.destroy();
+            }
+
+            // Create the new Pie chart
+            myPieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels.length > 0 ? labels : ['No Expenses Yet'],
+                    datasets: [{
+                        label: 'Expenses by Category',
+                        data: chartData.length > 0 ? chartData : [1],
+                        backgroundColor: chartData.length > 0 ? colors.slice(0, labels.length) : ['#ccc'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            display: chartData.length > 0 // Hide legend if no data
+                        },
+                        tooltip: {
+                             enabled: chartData.length > 0 // Disable tooltips if no data
+                        }
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Error fetching financial data:', error);
+        }
+    }
+    
+    // Run the function when the page loads
+    document.addEventListener('DOMContentLoaded', updateDashboard);
+</script>
+{% endblock %}

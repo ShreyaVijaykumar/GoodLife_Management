@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% set main_class = 'container-fluid' %}
+
+{% block head %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+
+<style>
+    /* --- Calendar Styles --- */
+    #calendar {
+        max-width: 1100px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    /* --- Modal Styles --- */
+    .modal {
+        display: none; 
+        position: fixed; 
+        z-index: 1000; 
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        overflow: auto; 
+        background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+        background-color: #fefefe;
+        margin: 10% auto;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 80%;
+        max-width: 600px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .modal-header h2 {
+        margin: 0;
+        text-align: left;
+    }
+    .close-btn {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .close-btn:hover { color: #000; }
+    /* --- Attendance List --- */
+    #attendance-list { max-height: 400px; overflow-y: auto; }
+    .attendance-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    .attendance-row:last-child { border-bottom: none; }
+    .attendance-row label { margin: 0; font-weight: 600; }
+    .attendance-radios { display: flex; gap: 10px; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div id='calendar'></div>
+
+<div id="eventModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add Event / Note</h2>
+            <span class="close-btn" onclick="closeModal('eventModal')">&times;</span>
+        </div>
+        <form action="/add_event" method="POST">
+            <label for="eventTitle">Event Title:</label>
+            <input type="text" id="eventTitle" name="title" required>
+            
+            <label for="eventStartDate">Start Date:</label>
+            <input type="date" id="eventStartDate" name="start" required>
+            
+            <label for="eventEndDate">End Date (Optional):</label>
+            <input type="date" id="eventEndDate" name="end">
+            
+            <label for="eventDetails">Details / Notes:</label>
+            <textarea id="eventDetails" name="details"></textarea>
+            
+            <label for="eventColor">Color:</label>
+            <select id="eventColor" name="color">
+                <option value="#3788d8">Blue (General)</option>
+                <option value="#d32f2f">Red (Urgent)</option>
+                <option value="#388e3c">Green (Appointment)</option>
+                <option value="#f57c00">Orange (Meeting)</option>
+            </select>
+            
+            <button type="submit">Save Event</button>
+        </form>
+    </div>
+</div>
+
+<div id="attendanceModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="attendance-title">Take Attendance</h2>
+            <span class="close-btn" onclick="closeModal('attendanceModal')">&times;</span>
+        </div>
+        
+        <input type="hidden" id="attendance-date-hidden">
+        
+        <div id="attendance-list">
+            </div>
+        
+        <button id="save-attendance-btn" onclick="saveAttendance()">Save Attendance</button>
+    </div>
+</div>
+
+<script>
+    // Make calendar object global
+    let calendar; 
+    
+    // We run this script *after* the <div id="calendar"> has been rendered
+    var calendarEl = document.getElementById('calendar');
+    
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listWeek addEventButton attendanceButton'
+        },
+        events: '/get_calendar_events', // API to fetch events
+        
+        customButtons: {
+            addEventButton: {
+                text: 'Add Event',
+                click: function() {
+                    document.getElementById('eventStartDate').valueAsDate = new Date();
+                    document.getElementById('eventEndDate').value = '';
+                    document.getElementById('eventTitle').value = '';
+                    document.getElementById('eventDetails').value = '';
+                    openModal('eventModal');
+                }
+            },
+            attendanceButton: {
+                text: 'Take Attendance',
+                click: function() {
+                    const today = new Date().toISOString().split('T')[0];
+                    openAttendanceModal(today);
+                }
+            }
+        },
+        
+        dateClick: function(info) {
+            openAttendanceModal(info.dateStr);
+        },
+        
+        eventClick: function(info) {
+            alert(
+                'Event: ' + info.event.title + '\n' +
+                'Details: ' + (info.event.extendedProps.details || 'None')
+            );
+        }
+    });
+    
+    calendar.render();
+
+    // --- Modal Helper Functions ---
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'block';
+    }
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // --- Attendance Functions ---
+    async function openAttendanceModal(dateStr) {
+        document.getElementById('attendance-title').innerText = 'Attendance for ' + dateStr;
+        document.getElementById('attendance-date-hidden').value = dateStr;
+        
+        const listEl = document.getElementById('attendance-list');
+        listEl.innerHTML = '<p>Loading people...</p>';
+        openModal('attendanceModal');
+        
+        const response = await fetch(`/get_attendance_data?date=${dateStr}`);
+        const people = await response.json();
+        
+        listEl.innerHTML = ''; // Clear loading
+        
+        if (people.length === 0) {
+            listEl.innerHTML = '<p>No people found. Please add people in the "People" section first.</p>';
+            return;
+        }
+        
+        people.forEach(person => {
+            const status = person.status || 'Present';
+            listEl.innerHTML += `
+                <div class="attendance-row" data-person-id="${person.id}">
+                    <label>${person.name} <span style="font-size:0.8em; color: #777;">(${person.category})</span></label>
+                    <div class="attendance-radios">
+                        <input type="radio" id="p_${person.id}" name="status_${person.id}" value="Present" ${status === 'Present' ? 'checked' : ''}>
+                        <label for="p_${person.id}">Present</label>
+                        <input type="radio" id="a_${person.id}" name="status_${person.id}" value="Absent" ${status === 'Absent' ? 'checked' : ''}>
+                        <label for="a_${person.id}">Absent</label>
+                        <input type="radio" id="l_${person.id}" name="status_${person.id}" value="Leave" ${status === 'Leave' ? 'checked' : ''}>
+                        <label for="l_${person.id}">Leave</label>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    async function saveAttendance() {
+        const date = document.getElementById('attendance-date-hidden').value;
+        const rows = document.querySelectorAll('#attendance-list .attendance-row');
+        
+        let attendance = {};
+        rows.forEach(row => {
+            const personId = row.dataset.personId;
+            const status = row.querySelector(`input[name="status_${personId}"]:checked`).value;
+            attendance[personId] = status;
+        });
+        
+        const response = await fetch('/save_attendance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date: date, attendance: attendance })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            closeModal('attendanceModal');
+            alert(result.message);
+        } else {
+            alert('Error saving attendance: ' + result.error);
+        }
+    }
+
+    // Close modals if user clicks outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Add New Person</h2>
+
+<form method="POST">
+    <label>Full Name:</label>
+    <input type="text" name="name" required>
+
+    <label>Category:</label>
+    <select name="category" required>
+        <option value="">Select Category</option>
+        <option value="Child">Orphan Child</option>
+        <option value="Elder">Abandoned Elder</option>
+        <option value="Staff">Staff Member</option>
+    </select>
+
+    <label>Date of Birth:</label>
+    <input type="date" name="dob">
+
+    <label>Join Date:</label>
+    <input type="date" name="join_date" required>
+    
+    <label>Notes (e.g., medical info, background):</label>
+    <textarea name="notes"></textarea>
+
+    <button type="submit">Save Person</button>
+</form>
+{% endblock %}

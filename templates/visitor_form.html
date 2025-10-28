@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Visitor Monitor</h2>
+
+<div class="tab-nav">
+    <a href="#form" class="active" onclick="showTab(event, 'form')">Visitor Entry Form</a>
+    <a href="#data" onclick="showTab(event, 'data')">Visitor History</a>
+</div>
+
+<div id="form" class="tab-content">
+    <form method="POST">
+        <label>Name:</label>
+        <input type="text" name="name" required>
+
+        <label>Aadhar Number:</label>
+        <input type="text" name="aadhar" required>
+
+        <label>Age:</label>
+        <input type="number" name="age" required>
+
+        <label>Address:</label>
+        <textarea name="address" required></textarea>
+
+        <label>Purpose of Visit:</label>
+        <input type="text" name="purpose" required>
+
+        <label>Remarks:</label>
+        <textarea name="remarks"></textarea>
+
+        <button type="submit">Submit Visitor</button>
+    </form>
+</div>
+
+<div id="data" class="tab-content" style="display: none;">
+    
+    <div class="filter-nav">
+        <a href="?filter=today" class="{% if current_filter == 'today' %}active{% endif %}">Today</a>
+        <a href="?filter=yesterday" class="{% if current_filter == 'yesterday' %}active{% endif %}">Yesterday</a>
+        <a href="?filter=year" class="{% if current_filter == 'year' %}active{% endif %}">This Year</a>
+        <a href="?filter=all" class="{% if current_filter == 'all' %}active{% endif %}">All Time</a>
+    </div>
+    
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Name</th>
+                <th>Aadhar</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for visitor in visitors %}
+            <tr>
+                <td>{{ visitor.visit_date }}</td>
+                <td>{{ visitor.visit_time }}</td>
+                <td>{{ visitor.name }}</td>
+                <td>{{ visitor.aadhar }}</td>
+                <td>{{ visitor.purpose }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 2rem;">No visitors found for this period.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function showTab(evt, tabName) {
+        // Hide all tab content
+        var i, tabcontent;
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        
+        // Remove 'active' class from all tab links
+        var tablinks = document.getElementsByClassName("tab-nav")[0].getElementsByTagName("a");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        
+        // Show the current tab and add 'active' class
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+    
+    // Show the first tab by default
+    document.getElementById("form").style.display = "block";
+</script>
+{% endblock %}
